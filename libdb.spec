@@ -2,7 +2,7 @@
 
 Name: libdb
 Version: 18.1.32
-Release: 1
+Release: 2
 Summary: Berkeley DB is a family of embedded key-value database libraries providing scalable high-performance data management services to applications.
 License: AGPL-3.0 and Public Domain
 URL: http://www.oracle.com/database/berkeley-db/
@@ -192,6 +192,7 @@ chrpath -d ${RPM_BUILD_ROOT}%{_libdir}/*.so ${RPM_BUILD_ROOT}%{_bindir}/*
 
 %files devel
 %doc examples/*
+%license EXAMPLES-LICENSE
 %{_libdir}/libdb.so
 %{_includedir}/db.h
 %{_includedir}/db_185.h
@@ -233,5 +234,12 @@ chrpath -d ${RPM_BUILD_ROOT}%{_libdir}/*.so ${RPM_BUILD_ROOT}%{_bindir}/*
 %{_libdir}/libdb_java.so
 
 %changelog
-* Tue Sep 24 2019 openEuler Buildteam <buildteam@openeuler.org> - version-release
+* Thu Oct 10 2019 hanxinke<hanxinke@huawei.com> - 18.1.32-2
+- Type:enhancement
+- ID:NA
+- SUG:NA
+- DESC:add EXAMPLES-LICENSE to the devel package
+
+* Tue Sep 24 2019 openEuler Buildteam <buildteam@openeuler.org> - 18.1.32-1
 - Package init
+
