@@ -1,0 +1,125 @@
+From 4d6bce62d61739271300a3ee32b1a44cb0dce10e Mon Sep 17 00:00:00 2001
+From: huangkaibin <huangkaibin@huawei.com>
+Date: Fri, 30 Jun 2017 16:24:08 +0800
+Subject: [PATCH] libdb: Fix dead-lock on mempool file locks.
+
+1. When operate on mempool files, the following locks must be got in order.
+a) hash lock for mempool files(ref as hash lock)
+b) file lock for mempool file(ref as mfp lock)
+Note: these locks are shared between processes through mmap.
+
+When there are at least 4 processes(A, B, C, D) running at the same time, there is a rare case
+that will cause deadlock between processes.
+The following steps describe how deadlock occurres.
+1. process A gets mfp lock(ID of X)
+(__memp_fclose->MUTEX_LOCK(env, mfp->mutex))
+
+2. process B gets hash lock
+(__memp_fopen->MUTEX_LOCK(env, hp->mtx_hash))
+
+3. process B then wait for mfp lock(because it is locked by A)
+(__memp_mpf_find->MUTEX_LOCK(env, mfp->mutex))
+
+4. process C also wait for the same mfp lock.
+(__memp_fclose->MUTEX_LOCK(env, mfp->mutex))
+
+5. process A release mfp lock(ID of x)
+(__memp_fclose->__memp_mf_discard->MUTEX_UNLOCK(env, mfp->mutex))
+For the mempool file, there is a counter (mfp->mpf_cnt) to track
+how many processes open this mempool file. And when no any process
+open this mempool file, the file will be closed and the mfp lock will be freed.
+Here, mfp->mpf_cnt is 1, and this mfp lock is freed, and will be reused by other locks.
+
+6. process D create a new mfp lock using the freed ID X in step 5,
+(__fop_file_setup->__lock_id->__lock_getlocker_int->__mutex_alloc)
+and gets this lock immediately
+(__fop_file_setup->__lock_id->__lock_getlocker_int->MUTEX_LOCK(env, mutex))
+
+7. process D then gets and waits for hash lock(because it is locked by B)
+(__memp_fopen->MUTEX_LOCK(env, hp->mtx_hash))
+
+Thus, there is a deadlock between B and D, for,
+B gets hash lock but wait for mfp lock, and
+D gets mfp lock but wait for hash lock.
+
+2. According to steps 1-7, process D waits for mfp lock, but is is freed by A in step 5,
+and waits for a different lock with same ID created by process D. This is the root
+reason for the deadlock.
+In this patch, we will also lock the hash lock before locking mfp lock in step 1, so that
+no other processes can obtain mfp lock while it is in freeing.
+
+3. This deadlock can be produced easily by running many rpm commands at the same time.
+rpm --checksig --nosignature xxxx.rpm
+---
+ src/mp/mp_fopen.c | 20 +++++++++++++++++---
+ 1 file changed, 17 insertions(+), 3 deletions(-)
+
+diff --git a/src/mp/mp_fopen.c b/src/mp/mp_fopen.c
+index d825909..9123617 100644
+--- a/src/mp/mp_fopen.c
++++ b/src/mp/mp_fopen.c
+@@ -912,6 +912,9 @@ __memp_fclose(dbmfp, flags)
+ 	DB_MPOOL *dbmp;
+ 	ENV *env;
+ 	MPOOLFILE *mfp;
++	MPOOL *mp;
++	DB_MPOOL_HASH *hp;
++	int hp_locked;
+ 	char *rpath;
+ 	u_int32_t ref;
+ 	int deleted, purge_dead, ret, t_ret;
+@@ -991,6 +994,9 @@ __memp_fclose(dbmfp, flags)
+ 	if (!F_ISSET(dbmfp, MP_OPEN_CALLED))
+ 		goto done;
+ 
++	mp = dbmp->reginfo[0].primary;
++	hp = R_ADDR(dbmp->reginfo, mp->ftab);
++	hp += mfp->bucket;
+ 	/*
+ 	 * If it's a temp file, all outstanding references belong to unflushed
+ 	 * buffers.  (A temp file can only be referenced by one DB_MPOOLFILE).
+@@ -999,8 +1005,11 @@ __memp_fclose(dbmfp, flags)
+ 	 * when we try to flush them.
+ 	 */
+ 	deleted = 0;
+-	if (!LF_ISSET(DB_MPOOL_NOLOCK))
++	if (!LF_ISSET(DB_MPOOL_NOLOCK)) {
++		MUTEX_LOCK(env, hp->mtx_hash);
+ 		MUTEX_LOCK(env, mfp->mutex);
++		hp_locked = 1;
++	}
+ 	if (F_ISSET(dbmfp, MP_MULTIVERSION))
+ 		atomic_dec(env, &mfp->multiversion);
+ 	if (F_ISSET(dbmfp, MP_READONLY) ||
+@@ -1038,7 +1047,7 @@ __memp_fclose(dbmfp, flags)
+ 			 */
+ 			DB_ASSERT(env, !LF_ISSET(DB_MPOOL_NOLOCK));
+ 			if ((t_ret =
+-			    __memp_mf_discard(dbmp, mfp, 0)) != 0 && ret == 0)
++			    __memp_mf_discard(dbmp, mfp, hp_locked)) != 0 && ret == 0)
+ 				ret = t_ret;
+ 			deleted = 1;
+ 		}
+@@ -1046,5 +1055,10 @@ __memp_fclose(dbmfp, flags)
+ 	if (!deleted && !LF_ISSET(DB_MPOOL_NOLOCK))
+ 		MUTEX_UNLOCK(env, mfp->mutex);
++	if(hp_locked) {
++		MUTEX_UNLOCK(env, hp->mtx_hash);
++		hp_locked = 0;
++	}
++
+ 	if (purge_dead)
+ 		(void)__memp_purge_dead_files(env);
+ 
+@@ -1126,7 +1140,7 @@ __memp_mf_discard(dbmp, mfp, hp_locked)
+ 	/* Lock the region and collect stats and free the space. */
+ 	MPOOL_SYSTEM_LOCK(env);
+ 	if (need_sync &&
+-	    (t_ret = __memp_mf_sync(dbmp, mfp, 0)) != 0 && ret == 0)
++	    (t_ret = __memp_mf_sync(dbmp, mfp, hp_locked)) != 0 && ret == 0)
+ 		ret = t_ret;
+ 
+ #ifdef HAVE_STATISTICS
+-- 
+1.8.3.1
+
