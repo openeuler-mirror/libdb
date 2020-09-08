@@ -1,11 +1,11 @@
 Name:		libdb
 Version:	5.3.28
-Release:	35
+Release:	36
 Summary:	The Berkeley DB database library for C
 License:	BSD and LGPLv2 and Sleepycat
 URL:		https://www.oracle.com/database/berkeley-db/
 
-Source0:	http://download.oracle.com/otn/berkeley-db/db-%{version}.tar.gz
+Source0:	http://download.oracle.com/berkeley-db/db-%{version}.tar.gz
 Source1:        http://download.oracle.com/berkeley-db/db.1.85.tar.gz
 Source2:        http://www.gnu.org/licenses/lgpl-2.1.txt
 Source3:        libdb-5.3.28-manpages.tar.gz
@@ -209,6 +209,9 @@ mv man/* %{buildroot}%{_mandir}/man1/
 %{_mandir}/man1
 
 %changelog
+* Tue Sep 8 2020 wangchen <wangchen137@huawei.com> - 5.3.28-36
+- Modify the URL of Source0
+
 * Wed Nov 6 2019 openEuler Buildteam <buildteam@openeuler.org> - 5.3.28-35
 - Add Package version
 
