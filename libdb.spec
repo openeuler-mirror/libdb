@@ -1,6 +1,6 @@
 Name:		libdb
 Version:	5.3.28
-Release:	35
+Release:	36
 Summary:	The Berkeley DB database library for C
 License:	BSD and LGPLv2 and Sleepycat
 URL:		https://www.oracle.com/database/berkeley-db/
@@ -32,6 +32,7 @@ Patch34:        libdb-5.3.21-region-size-check.patch
 # Patch sent upstream
 Patch35:        checkpoint-opd-deadlock.patch
 Patch36:        db-5.3.28-atomic_compare_exchange.patch
+Patch37:        backport-CVE-2019-2708-Resolved-data-store-execution-which-led-to-partial-DoS.patch
 
 Patch9000:      bugfix-fix-deadlock-on-mempool-file-locks.patch
 
@@ -112,6 +113,7 @@ popd
 %patch34 -p1
 %patch35 -p1
 %patch36 -p1
+%patch37 -p1
 
 %patch9000 -p1
 
@@ -209,6 +211,9 @@ mv man/* %{buildroot}%{_mandir}/man1/
 %{_mandir}/man1
 
 %changelog
+* Mon Apr 19 2021 wangchen <wangchen137@huawei.com> - 5.3.28-36
+- Fix CVE-2019-2708
+
 * Wed Nov 6 2019 openEuler Buildteam <buildteam@openeuler.org> - 5.3.28-35
 - Add Package version
 
