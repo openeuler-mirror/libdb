@@ -1,6 +1,6 @@
 Name:		libdb
 Version:	5.3.28
-Release:	37
+Release:	38
 Summary:	The Berkeley DB database library for C
 License:	BSD and LGPLv2 and Sleepycat
 URL:		https://www.oracle.com/database/berkeley-db/
@@ -38,6 +38,7 @@ Patch9000:      bugfix-fix-deadlock-on-mempool-file-locks.patch
 
 Patch9001:      libdb-limit-cpu.patch
 patch9002:      libdb-cbd-race.patch
+Patch9003:      fix-a-potential-infinite-loop.patch
 
 BuildRequires:	gcc gcc-c++ perl-interpreter libtool tcl-devel >= 8.5.2-3 
 BuildRequires:  java-devel >= 1:1.6.0 chrpath zlib-devel
@@ -119,6 +120,7 @@ popd
 
 %patch9001 -p1
 %patch9002 -p1
+%patch9003 -p1
 
 pushd dist
 ./s_config
@@ -211,6 +213,9 @@ mv man/* %{buildroot}%{_mandir}/man1/
 %{_mandir}/man1
 
 %changelog
+* Tue Jun 21 2022 Kou Wenqi <kouwenqi@kylinos.cn> - 5.3.28-38
+- Fix a potential infinite loop
+
 * Mon Apr 19 2021 wangchen <wangchen137@huawei.com> - 5.3.28-37
 - Fix CVE-2019-2708
 
