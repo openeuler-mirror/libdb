@@ -1,0 +1,55 @@
+From ad2bb7182132f6d15c207a8c0d37d24e241eb468 Mon Sep 17 00:00:00 2001
+From: hanxinke <hanxinke@huawei.com>
+Date: Fri, 11 Feb 2022 11:08:18 +0800
+Subject: [PATCH] add check for device number in __check_lock_fn
+
+When a file with the same inode as the inode of /var/lib/rpm/.rpm.lock
+exists on another partition, package updates will also execute correctly
+because of check for device.
+
+---
+ src/os/os_flock.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/src/os/os_flock.c b/src/os/os_flock.c
+index 03aa3df..482dffa 100644
+--- a/src/os/os_flock.c
++++ b/src/os/os_flock.c
+@@ -10,6 +10,8 @@
+ 
+ #include "db_int.h"
+ 
++#include <linux/kdev_t.h>
++
+ #if !defined(HAVE_FCNTL) || !defined(HAVE_FLOCK)
+ static int __os_filelocking_notsup __P((ENV *));
+ #endif
+@@ -34,6 +36,7 @@ int __check_lock_fn(fn, pid)
+     int i, inode;
+     struct stat st;
+     pid_t lpid = 0;
++    int f_major, f_minor, l_major, l_minor;
+ 
+     if (!fn)
+        return -1;
+@@ -59,10 +62,16 @@ int __check_lock_fn(fn, pid)
+             /* Check the inode */
+             else if (i == 5) {
+                 inode = 0;
+-                sscanf(token, "%*02x:%*02x:%d", &inode);
++                sscanf(token, "%02x:%02x:%d", &l_major, &l_minor, &inode);
+                 /* Not the inode we are looking for */
+                 if (inode != st.st_ino)
+                     continue;
++
++                f_major = MAJOR(st.st_dev);
++                f_minor = MINOR(st.st_dev);
++                if ((f_major != l_major) || (f_minor != l_minor))
++                    continue;
++
+                 /*
+                  * We have the correct file.
+                  * We are either looking for a specific process or we do not care at all.
+-- 
+2.23.0
+
