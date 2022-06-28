@@ -1,6 +1,6 @@
 Name:		libdb
 Version:	5.3.28
-Release:	36
+Release:	37
 Summary:	The Berkeley DB database library for C
 License:	BSD and LGPLv2 and Sleepycat
 URL:		https://www.oracle.com/database/berkeley-db/
@@ -34,10 +34,10 @@ Patch35:        checkpoint-opd-deadlock.patch
 Patch36:        db-5.3.28-atomic_compare_exchange.patch
 Patch37:        backport-CVE-2019-2708-Resolved-data-store-execution-which-led-to-partial-DoS.patch
 
-Patch9000:      bugfix-fix-deadlock-on-mempool-file-locks.patch
-
-Patch9001:      libdb-limit-cpu.patch
-patch9002:      libdb-cbd-race.patch
+Patch38:        bugfix-fix-deadlock-on-mempool-file-locks.patch
+Patch39:        libdb-limit-cpu.patch
+patch40:        libdb-cbd-race.patch
+Patch41:        add-check-for-device-number-in-__check_lock_fn.patch
 
 BuildRequires:	gcc gcc-c++ perl-interpreter libtool tcl-devel >= 8.5.2-3 
 BuildRequires:  java-devel >= 1:1.6.0 chrpath zlib-devel
@@ -114,11 +114,10 @@ popd
 %patch35 -p1
 %patch36 -p1
 %patch37 -p1
-
-%patch9000 -p1
-
-%patch9001 -p1
-%patch9002 -p1
+%patch38 -p1
+%patch39 -p1
+%patch40 -p1
+%patch41 -p1
 
 pushd dist
 ./s_config
@@ -211,6 +210,9 @@ mv man/* %{buildroot}%{_mandir}/man1/
 %{_mandir}/man1
 
 %changelog
+* Tue Jun 28 2022 panxiaohe <panxh.life@foxmail.com> - 5.3.28-37
+- add check for device number in __check_lock_fn
+
 * Mon Apr 19 2021 wangchen <wangchen137@huawei.com> - 5.3.28-36
 - Fix CVE-2019-2708
 
