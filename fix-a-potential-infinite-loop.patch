@@ -1,0 +1,27 @@
+From 7fe098ae34b54d41ec9273c7ae51ee8e708c8193 Mon Sep 17 00:00:00 2001
+From: Kou Wenqi <kouwenqi@kylinos.cn>
+Date: Mon, 20 Jun 2022 17:31:32 +0800
+Subject: [PATCH] fix a potential infinite loop
+
+---
+ src/dbinc/shqueue.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/dbinc/shqueue.h b/src/dbinc/shqueue.h
+index 5fdbf47..8f185b5 100644
+--- a/src/dbinc/shqueue.h
++++ b/src/dbinc/shqueue.h
+@@ -261,8 +261,8 @@ struct {								\
+ #define	SH_TAILQ_NEXTP(elm, field, type)				\
+ 	((struct type *)((u_int8_t *)(elm) + (elm)->field.stqe_next))
+ 
+-#define	SH_TAILQ_NEXT(elm, field, type)					\
+-	((elm)->field.stqe_next == -1 ? NULL :				\
++#define	SH_TAILQ_NEXT(elm, field, type)													\
++	(((elm)->field.stqe_next == -1 || (elm)->field.stqe_next == 0) ? NULL :				\
+ 	((struct type *)((u_int8_t *)(elm) + (elm)->field.stqe_next)))
+ 
+   /*
+-- 
+2.23.0
+
