@@ -1,6 +1,6 @@
 Name:		libdb
 Version:	5.3.28
-Release:	37
+Release:	38
 Summary:	The Berkeley DB database library for C
 License:	BSD and LGPLv2 and Sleepycat
 URL:		https://www.oracle.com/database/berkeley-db/
@@ -40,7 +40,7 @@ patch40:        libdb-cbd-race.patch
 Patch41:        add-check-for-device-number-in-__check_lock_fn.patch
 
 BuildRequires:	gcc gcc-c++ perl-interpreter libtool tcl-devel >= 8.5.2-3 
-BuildRequires:  java-devel >= 1:1.6.0 chrpath zlib-devel
+BuildRequires:  java-1.8.0-openjdk-devel chrpath zlib-devel
 Conflicts:      filesystem < 3
 
 Provides:       %{name}-utils = %{version}-%{release}
@@ -210,6 +210,9 @@ mv man/* %{buildroot}%{_mandir}/man1/
 %{_mandir}/man1
 
 %changelog
+* Mon Nov 7 2022 hanshangkun <han_shangkun@hoperun.com> - 5.3.28-38
+- Change the Buildrequire from java-devel to java-1.8.0-openjdk-devel
+
 * Tue Jun 28 2022 panxiaohe <panxh.life@foxmail.com> - 5.3.28-37
 - add check for device number in __check_lock_fn
 
