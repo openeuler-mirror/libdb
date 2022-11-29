@@ -1,6 +1,6 @@
 Name:		libdb
 Version:	5.3.28
-Release:	40
+Release:	41
 Summary:	The Berkeley DB database library for C
 License:	BSD and LGPLv2 and Sleepycat
 URL:		https://www.oracle.com/database/berkeley-db/
@@ -42,7 +42,7 @@ Patch42:        fix-a-potential-infinite-loop.patch
 Patch43:        db-5.3.28-sw.patch
 
 BuildRequires:	gcc gcc-c++ perl-interpreter libtool tcl-devel >= 8.5.2-3 
-BuildRequires:  java-devel >= 1:1.6.0 chrpath zlib-devel
+BuildRequires:  java-1.8.0-openjdk-devel chrpath zlib-devel
 Conflicts:      filesystem < 3
 
 Provides:       %{name}-utils = %{version}-%{release}
@@ -217,6 +217,9 @@ mv man/* %{buildroot}%{_mandir}/man1/
 %{_mandir}/man1
 
 %changelog
+* Tue Nov 29 2022 chendexi <chendexi@kylinos.cn> - 5.3.28-41
+- Change the Buildrequire from java-devel to java-1.8.0-openjdk-devel
+
 * Wed Oct 19 2022 wuzx<wuzx1226@qq.com> - 5.3.28-40
 - add sw64 patch
 
