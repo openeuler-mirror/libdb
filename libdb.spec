@@ -1,6 +1,6 @@
 Name:		libdb
 Version:	5.3.28
-Release:	41
+Release:	42
 Summary:	The Berkeley DB database library for C
 License:	BSD and LGPLv2 and Sleepycat
 URL:		https://www.oracle.com/database/berkeley-db/
@@ -131,7 +131,7 @@ pushd dist
 popd
 
 %build
-CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
+CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing -Wno-int-conversion"
 CFLAGS="$CFLAGS -DSHAREDSTATEDIR='\"%{_sharedstatedir}\"' -DSQLITE_ENABLE_COLUMN_METADATA=1 -DSQLITE_DISABLE_DIRSYNC=1 -DSQLITE_ENABLE_FTS3=3 -DSQLITE_ENABLE_RTREE=1 -DSQLITE_SECURE_DELETE=1 -DSQLITE_ENABLE_UNLOCK_NOTIFY=1 -I../../../lang/sql/sqlite/ext/fts3/"
 export CFLAGS
 
@@ -217,6 +217,9 @@ mv man/* %{buildroot}%{_mandir}/man1/
 %{_mandir}/man1
 
 %changelog
+* Wed May 10 2023 Xiaoya Huang <huangxiaoya@iscas.ac.cn> - 1:7.1.0.28-6
+- Fix clang building errors
+
 * Wed Oct 19 2022 wuzx<wuzx1226@qq.com> - 5.3.28-41
 - add sw64 patch
 
